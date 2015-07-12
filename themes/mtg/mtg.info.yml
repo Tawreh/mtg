@@ -1,0 +1,12 @@
+name: MTG
+type: theme
+description: 'A theme for our MTG database.'
+package: Custom
+core: 8.x
+base theme: classy
+libraries:
+  - mtg/base
+regions:
+  header: Header
+  content: Content
+  footer: Footer

@@ -1,0 +1,41 @@
+body {
+  background: #dcc;
+  color: #211;
+}
+
+a:link {
+  color: #f66;
+}
+
+a:visited {
+  color: #c33;
+}
+
+header {
+  overflow: hidden;
+  padding: 1em;
+}
+header > a,
+header .name-and-slogan {
+  float: left;
+}
+header img {
+  max-width: 100px;
+}
+header .region-header {
+  float: right;
+}
+
+main {
+  background: #fee;
+}
+
+.layout-content {
+  margin: auto;
+  max-width: 960px;
+  padding: 1em;
+}
+
+footer {
+  padding: 1em;
+}
