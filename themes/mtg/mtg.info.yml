@@ -1,7 +1,7 @@
 name: MTG
 type: theme
 description: 'A theme for our MTG database.'
-package: Custom
+package: MTG
 core: 8.x
 base theme: classy
 libraries:
