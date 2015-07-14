@@ -1,0 +1,9 @@
+uuid: 4d511022-a6e6-45e2-9900-c1836b554cb1
+langcode: en
+status: true
+dependencies: {  }
+name: Types
+vid: mtg_types
+description: ''
+hierarchy: 0
+weight: 0

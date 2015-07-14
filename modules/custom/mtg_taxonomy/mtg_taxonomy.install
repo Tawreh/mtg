@@ -1,0 +1,51 @@
+<?php
+
+/**
+ * @file
+ * Install and uninstall functions for the mtg_taxonomy module.
+ *
+ * This file contains the functions required to perform install and
+ * uninstall operations.
+ */
+
+use Drupal\taxonomy\Entity\Term;
+use Drupal\taxonomy\Entity\Vocabulary;
+use Drupal\taxonomy\TermInterface;
+use Drupal\taxonomy\VocabularyInterface;
+
+/**
+ * Implements hook_install().
+ *
+ * @ingroup mtg_taxonomy
+ */
+function mtg_taxonomy_install() {
+  // Start by clearing caches, as there are vocabularies created in config.
+  taxonomy_vocabulary_static_reset();
+
+  // Get our terms and add each of them to the relevant vocabulary.
+  module_load_include('module', 'mtg_taxonomy', 'mtg_taxonomy');
+  foreach (_mtg_taxonomy_term_list() as $vocabulary => $terms) {
+    foreach ($terms as $tid => $name) {
+      $term = entity_create('taxonomy_term', array(
+        'name' => $name,
+        'vid' => $vocabulary,
+      ))->save();
+    }
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ *
+ * @ingroup mtg_taxonomy
+ */
+function mtg_taxonomy_uninstall() {
+  // Deleete ALL THE THINGS
+  $vocabularies = taxonomy_vocabulary_get_names();
+
+  foreach ($vocabularies as $name => $vocab) {
+    if (strpos($name, 'mtg_') !== FALSE) {
+      Vocabulary::load($name)->delete();
+    }
+  }
+}

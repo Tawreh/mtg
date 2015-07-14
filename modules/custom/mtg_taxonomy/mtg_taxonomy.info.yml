@@ -1,0 +1,6 @@
+name: MTG Taxonomy
+description: Vocabularies and imported terms for our MTG project.
+package: MTG
+type: module
+version: 1.0
+core: 8.x

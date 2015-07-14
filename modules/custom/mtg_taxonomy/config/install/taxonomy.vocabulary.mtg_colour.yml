@@ -1,0 +1,9 @@
+uuid: a1ab411e-9a84-4a66-9b0e-14139b019cec
+langcode: en
+status: true
+dependencies: {  }
+name: Colour
+vid: mtg_colour
+description: ''
+hierarchy: 0
+weight: 0

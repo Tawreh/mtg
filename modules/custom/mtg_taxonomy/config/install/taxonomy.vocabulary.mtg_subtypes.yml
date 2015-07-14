@@ -1,0 +1,9 @@
+uuid: 8b4751e7-492a-469b-b405-5a065c6a8bf0
+langcode: en
+status: true
+dependencies: {  }
+name: Subtypes
+vid: mtg_subtypes
+description: ''
+hierarchy: 0
+weight: 0

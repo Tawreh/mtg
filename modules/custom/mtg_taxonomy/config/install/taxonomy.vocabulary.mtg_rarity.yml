@@ -1,0 +1,9 @@
+uuid: 34082116-958b-45af-a301-1c39bedc5553
+langcode: en
+status: true
+dependencies: {  }
+name: Rarity
+vid: mtg_rarity
+description: ''
+hierarchy: 0
+weight: 0

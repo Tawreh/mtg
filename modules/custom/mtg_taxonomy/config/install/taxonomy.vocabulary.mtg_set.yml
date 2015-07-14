@@ -1,0 +1,9 @@
+uuid: b145f5ce-eb30-4b0d-9401-01052b85744e
+langcode: en
+status: true
+dependencies: {  }
+name: Set
+vid: mtg_set
+description: ''
+hierarchy: 0
+weight: 0
