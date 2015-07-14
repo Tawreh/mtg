@@ -1,0 +1,9 @@
+uuid: a5258a56-64a6-43f8-ac00-bfeb66b23e74
+langcode: en
+status: true
+dependencies: {  }
+name: Affiliation
+vid: mtg_affiliation
+description: ''
+hierarchy: 0
+weight: 0

@@ -1,0 +1,9 @@
+uuid: 6c2da305-dcb5-4b95-8d00-e324dc68f9d1
+langcode: en
+status: true
+dependencies: {  }
+name: Block
+vid: mtg_block
+description: ''
+hierarchy: 0
+weight: 0

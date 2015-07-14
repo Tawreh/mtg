@@ -1,0 +1,41 @@
+<?php
+
+/**
+ * @file
+ * Module file for the mtg_taxonomy module.
+ *
+ * Includes helper functions and Drupal hooks.
+ */
+
+/**
+ * Helper function. Predefined taxonomy terms.
+ *
+ * @param string $vid Optional. If provided, return terms for this vocabulary.
+ *
+ * @return array Array of terms.
+ */
+function _mtg_taxonomy_term_list($vid = NULL) {
+  $terms = [
+    'mtg_colour' => [
+      'white' => t('White'),
+      'blue' => t('Blue'),
+      'black' => t('Black'),
+      'red' => t('Red'),
+      'green' => t('Green'),
+      'colourless' => t('Colourless'),
+    ],
+    'rarity' => [
+      'mythic' => t('Mythic rare'),
+      'rare' => t('Rare'),
+      'uncommon' => t('Uncommon'),
+      'common' => t('Common'),
+    ],
+  ];
+
+  if (!is_null($vid) && array_key_exists($vid, $terms)) {
+    return $terms[$vid];
+  }
+  else {
+    return $terms;
+  }
+}
