@@ -1,0 +1,21 @@
+uuid: 33bd37f1-49f3-4846-8e00-a90435bb9af7
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_toughness
+    - node.type.card
+  module:
+    - options
+id: node.card.field_toughness
+field_name: field_toughness
+entity_type: node
+bundle: card
+label: Toughness
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: list_string

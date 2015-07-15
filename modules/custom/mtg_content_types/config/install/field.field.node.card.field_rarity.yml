@@ -1,0 +1,28 @@
+uuid: 573bcc91-d1a5-49f3-824b-752f3c72b201
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_rarity
+    - node.type.card
+  module:
+    - entity_reference
+id: node.card.field_rarity
+field_name: field_rarity
+entity_type: node
+bundle: card
+label: Rarity
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:taxonomy_term'
+  handler_settings:
+    target_bundles:
+      mtg_rarity: mtg_rarity
+    sort:
+      field: _none
+    auto_create: true
+field_type: entity_reference

@@ -1,0 +1,28 @@
+uuid: d16c8733-4b8d-4274-8800-c743f93d86a8
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_block
+    - node.type.card
+  module:
+    - entity_reference
+id: node.card.field_block
+field_name: field_block
+entity_type: node
+bundle: card
+label: Block
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:taxonomy_term'
+  handler_settings:
+    target_bundles:
+      mtg_block: mtg_block
+    sort:
+      field: _none
+    auto_create: true
+field_type: entity_reference

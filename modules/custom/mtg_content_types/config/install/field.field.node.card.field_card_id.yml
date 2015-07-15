@@ -1,0 +1,23 @@
+uuid: fe7647e7-7a40-44b4-a922-341a598bf4c9
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_card_id
+    - node.type.card
+id: node.card.field_card_id
+field_name: field_card_id
+entity_type: node
+bundle: card
+label: 'Card ID'
+description: 'Unique Multiverse ID of the card'
+required: true
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: 0
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer

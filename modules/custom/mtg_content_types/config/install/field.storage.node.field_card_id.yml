@@ -1,0 +1,19 @@
+uuid: 41eeba0c-766d-41b1-bf29-41e5fa350877
+langcode: en
+status: true
+dependencies:
+  module:
+    - node
+id: node.field_card_id
+field_name: field_card_id
+entity_type: node
+type: integer
+settings:
+  unsigned: false
+  size: normal
+module: core
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false

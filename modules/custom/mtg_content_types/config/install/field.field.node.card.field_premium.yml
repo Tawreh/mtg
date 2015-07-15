@@ -1,0 +1,23 @@
+uuid: 00f39348-04bc-4867-a706-6a942768297a
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_premium
+    - node.type.card
+id: node.card.field_premium
+field_name: field_premium
+entity_type: node
+bundle: card
+label: Premium
+description: ''
+required: false
+translatable: false
+default_value:
+  -
+    value: 0
+default_value_callback: ''
+settings:
+  on_label: Premium
+  off_label: Nope
+field_type: boolean
