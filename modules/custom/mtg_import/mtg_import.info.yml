@@ -1,0 +1,6 @@
+name: MTG Import
+description: Import JSON files and map the data to a "card" content type.
+package: MTG
+type: module
+version: 1.0
+core: 8.x

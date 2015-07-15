@@ -1,0 +1,7 @@
+mtg_import_import:
+  path: 'mtg_import/upload'
+  defaults:
+    _form: '\Drupal\mtg_import\Form\UploadForm'
+    _title: 'Upload JSON file'
+  requirements:
+    _permission: 'access content'

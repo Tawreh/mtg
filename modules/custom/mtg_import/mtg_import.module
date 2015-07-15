@@ -1,0 +1,8 @@
+<?php
+
+/**
+ * @file
+ * Module file for the mtg_import module.
+ *
+ * Includes helper functions and Drupal hooks.
+ */
