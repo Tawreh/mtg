@@ -1,0 +1,23 @@
+uuid: c86ba813-c79a-4348-bc08-8ec2b6b992a9
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_regular
+    - node.type.card
+id: node.card.field_regular
+field_name: field_regular
+entity_type: node
+bundle: card
+label: Regular
+description: ''
+required: false
+translatable: false
+default_value:
+  -
+    value: 0
+default_value_callback: ''
+settings:
+  on_label: Regular
+  off_label: Nope
+field_type: boolean

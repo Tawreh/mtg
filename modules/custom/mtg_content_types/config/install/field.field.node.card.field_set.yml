@@ -1,0 +1,28 @@
+uuid: 4fc0ac8a-edd4-42fa-8e07-7caab5378b0e
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_set
+    - node.type.card
+  module:
+    - entity_reference
+id: node.card.field_set
+field_name: field_set
+entity_type: node
+bundle: card
+label: Set
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:taxonomy_term'
+  handler_settings:
+    target_bundles:
+      mtg_set: mtg_set
+    sort:
+      field: _none
+    auto_create: true
+field_type: entity_reference

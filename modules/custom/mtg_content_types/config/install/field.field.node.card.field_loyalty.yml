@@ -1,0 +1,23 @@
+uuid: 59ddf57f-3779-46c8-9b08-8e1b31ba48ad
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_loyalty
+    - node.type.card
+id: node.card.field_loyalty
+field_name: field_loyalty
+entity_type: node
+bundle: card
+label: Loyalty
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: 0
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer

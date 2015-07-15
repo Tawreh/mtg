@@ -1,0 +1,23 @@
+uuid: 248d9811-8042-419e-ab05-5a58d6508e18
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_converted_mana
+    - node.type.card
+id: node.card.field_converted_mana
+field_name: field_converted_mana
+entity_type: node
+bundle: card
+label: 'Converted mana'
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: 0
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer
