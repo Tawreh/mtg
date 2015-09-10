@@ -129,12 +129,9 @@ class DbDumpCommand extends Command {
    *   An array of table names.
    */
   protected function getTables() {
-    $pattern = $this->connection->tablePrefix() . '%';
-    $tables = array_values($this->connection->schema()->findTables($pattern));
-    foreach ($tables as $key => $table) {
-      // The prefix is removed for the resultant script.
-      $table = $tables[$key] = str_replace($this->connection->tablePrefix(), '', $table);
+    $tables = array_values($this->connection->schema()->findTables('%'));
 
+    foreach ($tables as $key => $table) {
       // Remove any explicitly excluded tables.
       foreach ($this->excludeTables as $pattern) {
         if (preg_match('/^' . $pattern . '$/', $table)) {
@@ -142,6 +139,7 @@ class DbDumpCommand extends Command {
         }
       }
     }
+
     return $tables;
   }
 
@@ -220,6 +218,9 @@ class DbDumpCommand extends Command {
     // Set primary key, unique keys, and indexes.
     $this->getTableIndexes($table, $definition);
 
+    // Set table collation.
+    $this->getTableCollation($table, $definition);
+
     return $definition;
   }
 
@@ -235,7 +236,6 @@ class DbDumpCommand extends Command {
     // Note, this query doesn't support ordering, so that is worked around
     // below by keying the array on Seq_in_index.
     $query = $this->connection->query("SHOW INDEX FROM {" . $table . "}");
-    $indexes = [];
     while (($row = $query->fetchAssoc()) !== FALSE) {
       $index_name = $row['Key_name'];
       $column = $row['Column_name'];
@@ -257,6 +257,22 @@ class DbDumpCommand extends Command {
         $definition['indexes'][$index_name][$order] = $column;
       }
     }
+  }
+
+  /**
+   * Set the table collation.
+   *
+   * @param string $table
+   *   The table to find indexes for.
+   * @param array &$definition
+   *   The schema definition to modify.
+   */
+  protected function getTableCollation($table, &$definition) {
+    $query = $this->connection->query("SHOW TABLE STATUS LIKE '{" . $table . "}'");
+    $data = $query->fetchAssoc();
+
+    // Set `mysql_character_set`. This will be ignored by other backends.
+    $definition['mysql_character_set'] = str_replace('_general_ci', '', $data['Collation']);
   }
 
   /**

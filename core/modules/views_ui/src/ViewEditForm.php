@@ -122,12 +122,6 @@ class ViewEditForm extends ViewFormBase {
     $form['#attached']['library'][] = 'views_ui/views_ui.admin';
     $form['#attached']['library'][] = 'views_ui/admin.styling';
 
-    $form['#attached']['drupalSettings']['views']['ajax'] = [
-      'id' => '.views-ajax-body',
-      'title' => '.views-ajax-title',
-      'popup' => '.views-ajax-popup',
-    ];
-
     $form += array(
       '#prefix' => '',
       '#suffix' => '',
@@ -220,23 +214,6 @@ class ViewEditForm extends ViewFormBase {
         '#type' => 'container',
         'tab_content' => $tab_content,
       );
-
-      // The content of the popup dialog.
-      $form['ajax-area'] = array(
-        '#type' => 'container',
-        '#attributes' => array(
-          'class' => array('views-ajax-popup'),
-        ),
-      );
-      $form['ajax-area']['ajax-title'] = array(
-        '#markup' => '<div class="views-ajax-title"></div>',
-      );
-      $form['ajax-area']['ajax-body'] = array(
-        '#type' => 'container',
-        '#attributes' => array(
-          'class' => array('views-ajax-body'),
-        ),
-      );
     }
 
     return $form;
@@ -264,8 +241,8 @@ class ViewEditForm extends ViewFormBase {
   /**
    * {@inheritdoc}
    */
-  public function validate(array $form, FormStateInterface $form_state) {
-    parent::validate($form, $form_state);
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+    parent::validateForm($form, $form_state);
 
     $view = $this->entity;
     if ($view->isLocked()) {
@@ -437,13 +414,20 @@ class ViewEditForm extends ViewFormBase {
         elseif ($view->status() && $view->getExecutable()->displayHandlers->get($display['id'])->hasPath()) {
           $path = $view->getExecutable()->displayHandlers->get($display['id'])->getPath();
           if ($path && (strpos($path, '%') === FALSE)) {
+            $uri = "base:$path";
+            if (!parse_url($path, PHP_URL_SCHEME)) {
+              // @todo Views should expect and store a leading /. See:
+              //   https://www.drupal.org/node/2423913
+              $url = Url::fromUserInput('/' . ltrim($uri, '/'));
+            }
+            else {
+              $url = Url::fromUri($uri);
+            }
             $build['top']['actions']['path'] = array(
               '#type' => 'link',
               '#title' => $this->t('View !display_title', array('!display_title' => $display_title)),
               '#options' => array('alt' => array($this->t("Go to the real page for this display"))),
-              // @todo Use Url::fromPath() once
-              //   https://www.drupal.org/node/2351379 is resolved.
-              '#url' => Url::fromUri("base:$path"),
+              '#url' => $url,
               '#prefix' => '<li class="view">',
               "#suffix" => '</li>',
             );
@@ -510,7 +494,7 @@ class ViewEditForm extends ViewFormBase {
       $build['top']['display_title'] = array(
         '#theme' => 'views_ui_display_tab_setting',
         '#description' => $this->t('Display name'),
-        '#link' => $view->getExecutable()->displayHandlers->get($display['id'])->optionLink(SafeMarkup::checkPlain($display_title), 'display_title'),
+        '#link' => $view->getExecutable()->displayHandlers->get($display['id'])->optionLink($display_title, 'display_title'),
       );
     }
 
@@ -684,12 +668,10 @@ class ViewEditForm extends ViewFormBase {
 
     // Regenerate the main display area.
     $build = $this->getDisplayTab($view);
-    static::addMicroweights($build);
     $response->addCommand(new HtmlCommand('#views-tab-' . $display_id, $build));
 
     // Regenerate the top area so changes to display names and order will appear.
     $build = $this->renderDisplayTop($view);
-    static::addMicroweights($build);
     $response->addCommand(new ReplaceCommand('#views-display-top', $build));
   }
 
@@ -1078,7 +1060,7 @@ class ViewEditForm extends ViewFormBase {
         continue;
       }
 
-      $field_name = SafeMarkup::checkPlain($handler->adminLabel(TRUE));
+      $field_name = $handler->adminLabel(TRUE);
       if (!empty($field['relationship']) && !empty($relationships[$field['relationship']])) {
         $field_name = '(' . $relationships[$field['relationship']] . ') ' . $field_name;
       }
@@ -1162,24 +1144,6 @@ class ViewEditForm extends ViewFormBase {
     }
 
     return $build;
-  }
-
-  /**
-   * Recursively adds microweights to a render array, similar to what
-   * \Drupal::formBuilder()->doBuildForm() does for forms.
-   *
-   * @todo Submit a core patch to fix drupal_render() to do this, so that all
-   *   render arrays automatically preserve array insertion order, as forms do.
-   */
-  public static function addMicroweights(&$build) {
-    $count = 0;
-    foreach (Element::children($build) as $key) {
-      if (!isset($build[$key]['#weight'])) {
-        $build[$key]['#weight'] = $count/1000;
-      }
-      static::addMicroweights($build[$key]);
-      $count++;
-    }
   }
 
 }

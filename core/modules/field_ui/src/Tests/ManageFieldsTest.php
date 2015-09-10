@@ -66,7 +66,10 @@ class ManageFieldsTest extends WebTestBase {
    */
   protected function setUp() {
     parent::setUp();
+
     $this->drupalPlaceBlock('system_breadcrumb_block');
+    $this->drupalPlaceBlock('local_actions_block');
+    $this->drupalPlaceBlock('local_tasks_block');
 
     // Create a test user.
     $admin_user = $this->drupalCreateUser(array('access content', 'administer content types', 'administer node fields', 'administer node form display', 'administer node display', 'administer taxonomy', 'administer taxonomy_term fields', 'administer taxonomy_term display', 'administer users', 'administer account settings', 'administer user display', 'bypass node access'));
@@ -614,6 +617,20 @@ class ManageFieldsTest extends WebTestBase {
 
     $this->assertText(t('The machine-readable name is already in use. It must be unique.'));
     $this->assertUrl($url, array(), 'Stayed on the same page.');
+  }
+
+  /**
+   * Tests that external URLs in the 'destinations' query parameter are blocked.
+   */
+  public function testExternalDestinations() {
+    $options = [
+      'query' => ['destinations' => ['http://example.com']],
+    ];
+    $this->drupalPostForm('admin/structure/types/manage/article/fields/node.article.body/storage', [], 'Save field settings', $options);
+    // The external redirect should not fire.
+    $this->assertUrl('admin/structure/types/manage/article/fields/node.article.body/storage', $options);
+    $this->assertResponse(200);
+    $this->assertRaw('Attempt to update field <em class="placeholder">Body</em> failed: <em class="placeholder">The internal path component &#039;http://example.com&#039; is external. You are not allowed to specify an external URL together with internal:/.</em>.');
   }
 
   /**

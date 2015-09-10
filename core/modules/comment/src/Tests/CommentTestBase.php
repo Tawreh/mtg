@@ -27,7 +27,7 @@ abstract class CommentTestBase extends WebTestBase {
    *
    * @var array
    */
-  public static $modules = array('comment', 'node', 'history', 'field_ui', 'datetime');
+  public static $modules = ['block', 'comment', 'node', 'history', 'field_ui', 'datetime'];
 
   /**
    * An administrative user with permission to configure comment settings.
@@ -86,6 +86,7 @@ abstract class CommentTestBase extends WebTestBase {
 
     // Create a test node authored by the web user.
     $this->node = $this->drupalCreateNode(array('type' => 'article', 'promote' => 1, 'uid' => $this->webUser->id()));
+    $this->drupalPlaceBlock('local_tasks_block');
   }
 
   /**
@@ -182,7 +183,7 @@ abstract class CommentTestBase extends WebTestBase {
    * @param bool $reply
    *   Boolean indicating whether the comment is a reply to another comment.
    *
-   * @return boolean
+   * @return bool
    *   Boolean indicating whether the comment was found.
    */
   function commentExists(CommentInterface $comment = NULL, $reply = FALSE) {
@@ -323,7 +324,7 @@ abstract class CommentTestBase extends WebTestBase {
   /**
    * Checks whether the commenter's contact information is displayed.
    *
-   * @return boolean
+   * @return bool
    *   Contact info is available.
    */
   function commentContactInfoAvailable() {

@@ -7,7 +7,9 @@
 
 namespace Drupal\entity_reference\Tests;
 
+use Drupal\Core\Entity\Entity;
 use Drupal\field_ui\Tests\FieldUiTestTrait;
+use Drupal\node\Entity\Node;
 use Drupal\simpletest\WebTestBase;
 use Drupal\taxonomy\Entity\Vocabulary;
 
@@ -45,14 +47,21 @@ class EntityReferenceAdminTest extends WebTestBase {
     parent::setUp();
     $this->drupalPlaceBlock('system_breadcrumb_block');
 
-    // Create test user.
-    $admin_user = $this->drupalCreateUser(array('access content', 'administer node fields', 'administer node display', 'administer views'));
-    $this->drupalLogin($admin_user);
-
     // Create a content type, with underscores.
     $type_name = strtolower($this->randomMachineName(8)) . '_test';
     $type = $this->drupalCreateContentType(array('name' => $type_name, 'type' => $type_name));
     $this->type = $type->id();
+
+    // Create test user.
+    $admin_user = $this->drupalCreateUser(array(
+      'access content',
+      'administer node fields',
+      'administer node display',
+      'administer views',
+      'create ' . $type_name . ' content',
+      'edit own ' . $type_name . ' content',
+    ));
+    $this->drupalLogin($admin_user);
   }
 
   /**
@@ -191,14 +200,107 @@ class EntityReferenceAdminTest extends WebTestBase {
     );
     $this->drupalPostAjaxForm($bundle_path . '/fields/' . $field_name, $edit, 'settings[handler]');
     $edit = array(
+      'required' => FALSE,
       'settings[handler_settings][view][view_and_display]' => 'test_entity_reference_entity_test:entity_reference_1',
     );
     $this->drupalPostForm(NULL, $edit, t('Save settings'));
     $this->assertResponse(200);
+
+    // Create a new view and display it as a entity reference.
+    $edit = array(
+      'id' => 'node_test_view',
+      'label' => 'Node Test View',
+      'show[wizard_key]' => 'node',
+      'page[create]' => 1,
+      'page[title]' => 'Test Node View',
+      'page[path]' => 'test/node/view',
+      'page[style][style_plugin]' => 'default',
+      'page[style][row_plugin]' => 'fields',
+    );
+    $this->drupalPostForm('admin/structure/views/add', $edit, t('Save and edit'));
+    $this->drupalPostForm(NULL, array(), t('Duplicate as Entity Reference'));
+    $this->clickLink(t('Settings'));
+    $edit = array(
+      'style_options[search_fields][title]' => 'title',
+    );
+    $this->drupalPostForm(NULL, $edit, t('Apply'));
+    $this->drupalPostForm('admin/structure/views/view/node_test_view/edit/entity_reference_1', array(), t('Save'));
+    $this->clickLink(t('Settings'));
+
+    // Create a test entity reference field.
+    $field_name = 'test_entity_ref_field';
+    $edit = array(
+      'new_storage_type' => 'field_ui:entity_reference:node',
+      'label' => 'Test Entity Reference Field',
+      'field_name' => $field_name,
+    );
+    $this->drupalPostForm($bundle_path . '/fields/add-field', $edit, t('Save and continue'));
+    $this->drupalPostForm(NULL, array(), t('Save field settings'));
+
+    // Add the view to the test field.
+    $edit = array(
+      'settings[handler]' => 'views',
+    );
+    $this->drupalPostAjaxForm(NULL, $edit, 'settings[handler]');
+    $edit = array(
+      'required' => FALSE,
+      'settings[handler_settings][view][view_and_display]' => 'node_test_view:entity_reference_1',
+    );
+    $this->drupalPostForm(NULL, $edit, t('Save settings'));
+
+    // Create nodes.
+    $node1 = Node::create([
+      'type' => $this->type,
+      'title' => 'Foo Node',
+    ]);
+    $node1->save();
+    $node2 = Node::create([
+      'type' => $this->type,
+      'title' => 'Foo Node',
+    ]);
+    $node2->save();
+
+    // Try to add a new node and fill the entity reference field.
+    $this->drupalGet('node/add/' . $this->type);
+    $result = $this->xpath('//input[@name="field_test_entity_ref_field[0][target_id]" and contains(@data-autocomplete-path, "/entity_reference_autocomplete/node/views/")]');
+    $target_url = $this->getAbsoluteUrl($result[0]['data-autocomplete-path']);
+    $this->drupalGet($target_url, array('query' => array('q' => 'Foo')));
+    $this->assertRaw($node1->getTitle() . ' (' . $node1->id() . ')');
+    $this->assertRaw($node2->getTitle() . ' (' . $node2->id() . ')');
+
+    $edit = array(
+      'title[0][value]' => 'Example',
+      'field_test_entity_ref_field[0][target_id]' => 'Test'
+    );
+    $this->drupalPostForm('node/add/' . $this->type, $edit, t('Save'));
+
+    // Assert that entity reference autocomplete field is validated.
+    $this->assertText(t('1 error has been found:   Test Entity Reference Field'), 'Node save failed when required entity reference field was not correctly filled.');
+    $this->assertText(t('There are no entities matching "@entity"', ['@entity' => 'Test']));
+
+    $edit = array(
+      'title[0][value]' => 'Test',
+      'field_test_entity_ref_field[0][target_id]' => $node1->getTitle()
+    );
+    $this->drupalPostForm('node/add/' . $this->type, $edit, t('Save'));
+
+    // Assert the results multiple times to avoid sorting problem of nodes with
+    // the same title.
+    $this->assertText(t('1 error has been found:   Test Entity Reference Field'));
+    $this->assertText(t('Multiple entities match this reference;'));
+    $this->assertText(t("@node1", ['@node1' => $node1->getTitle() . ' (' . $node1->id() . ')']));
+    $this->assertText(t("@node2", ['@node2' => $node2->getTitle() . ' (' . $node2->id() . ')']));
+
+    $edit = array(
+      'title[0][value]' => 'Test',
+      'field_test_entity_ref_field[0][target_id]' => $node1->getTitle() . '(' . $node1->id() . ')'
+    );
+    $this->drupalPostForm('node/add/' . $this->type, $edit, t('Save'));
+    $this->assertLink($node1->getTitle());
   }
 
   /**
-   * Tests the formatters for the Entity References
+   * Tests the formatters for the Entity References.
    */
   public function testAvailableFormatters() {
     // Create a new vocabulary.

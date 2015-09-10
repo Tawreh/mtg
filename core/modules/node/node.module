@@ -508,7 +508,9 @@ function template_preprocess_node_add_list(&$variables) {
       $variables['types'][$type->id()] = array(
         'type' => $type->id(),
         'add_link' => \Drupal::l($type->label(), new Url('node.add', array('node_type' => $type->id()))),
-        'description' => Xss::filterAdmin($type->getDescription()),
+        'description' => array(
+          '#markup' => $type->getDescription(),
+        ),
       );
     }
   }
@@ -720,21 +722,6 @@ function node_user_predelete($account) {
   foreach ($revisions as $revision) {
     node_revision_delete($revision);
   }
-}
-
-/**
- * Title callback: Displays the node's title.
- *
- * @param \Drupal\node\NodeInterface $node
- *   The node entity.
- *
- * @return
- *   An unsanitized string that is the title of the node.
- *
- * @see node_menu()
- */
-function node_page_title(NodeInterface $node) {
-  return $node->label();
 }
 
 /**

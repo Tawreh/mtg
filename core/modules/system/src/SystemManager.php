@@ -95,7 +95,7 @@ class SystemManager {
   /**
    * Checks for requirement severity.
    *
-   * @return boolean
+   * @return bool
    *   Returns the status of the system.
    */
   public function checkRequirements() {
@@ -119,7 +119,7 @@ class SystemManager {
     usort($requirements, function($a, $b) {
       if (!isset($a['weight'])) {
         if (!isset($b['weight'])) {
-          return strcmp($a['title'], $b['title']);
+          return strcasecmp($a['title'], $b['title']);
         }
         return -$b['weight'];
       }

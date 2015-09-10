@@ -232,7 +232,7 @@ class Table extends StylePluginBase implements CacheablePluginInterface {
     $form['caption'] = array(
       '#type' => 'textfield',
       '#title' => $this->t('Caption for the table'),
-      '#description' => $this->t('A title which is semantically associated to your table for increased accessibility.'),
+      '#description' => $this->t('A title semantically associated with your table for increased accessibility.'),
       '#default_value' => $this->options['caption'],
       '#maxlength' => 255,
     );
@@ -444,8 +444,9 @@ class Table extends StylePluginBase implements CacheablePluginInterface {
 
     foreach ($this->options['info'] as $field_id => $info) {
       if (!empty($info['sortable'])) {
-        $contexts[] = 'url.query_args:order';
-        $contexts[] = 'url.query_args:sort';
+        // The rendered link needs to play well with any other query parameter
+        // used on the page, like pager and exposed filter.
+        $contexts[] = 'url.query_args';
         break;
       }
     }

@@ -40,13 +40,16 @@ use Drupal\Component\Utility\SafeStringInterface;
  * @endcode
  *
  * The attribute keys and values are automatically sanitized for output with
- * htmlspecialchars() and the entire attribute string is marked safe for output.
+ * Html::escape() and the entire attribute string is marked safe for output.
+ *
+ * @see \Drupal\Component\Utility\Html::escape()
  */
 class Attribute implements \ArrayAccess, \IteratorAggregate, SafeStringInterface {
+
   /**
    * Stores the attribute data.
    *
-   * @var array
+   * @var \Drupal\Core\Template\AttributeValueBase[]
    */
   protected $storage = array();
 
@@ -262,6 +265,21 @@ class Attribute implements \ArrayAccess, \IteratorAggregate, SafeStringInterface
   }
 
   /**
+   * Returns all storage elements as an array.
+   *
+   * @return array
+   *   An associative array of attributes.
+   */
+  public function toArray() {
+    $return = [];
+    foreach ($this->storage as $name => $value) {
+      $return[$name] = $value->value();
+    }
+
+    return $return;
+  }
+
+  /**
    * Implements the magic __clone() method.
    */
   public function  __clone() {
@@ -282,6 +300,16 @@ class Attribute implements \ArrayAccess, \IteratorAggregate, SafeStringInterface
    */
   public function storage() {
     return $this->storage;
+  }
+
+  /**
+   * Returns a representation of the object for use in JSON serialization.
+   *
+   * @return string
+   *   The safe string content.
+   */
+  public function jsonSerialize() {
+    return (string) $this;
   }
 
 }
