@@ -133,6 +133,7 @@ class BasicTest extends WizardTestBase {
 
     // Confirm that the block is available in the block administration UI.
     $this->drupalGet('admin/structure/block/list/' . $this->config('system.theme')->get('default'));
+    $this->clickLinkPartialName('Place block');
     $this->assertText($view3['label']);
 
     // Place the block.
@@ -157,6 +158,7 @@ class BasicTest extends WizardTestBase {
     $view4['rest_export[create]'] = 1;
     $view4['rest_export[path]'] = $this->randomMachineName(16);
     $this->drupalPostForm('admin/structure/views/add', $view4, t('Save and edit'));
+    $this->assertRaw(t('The view %view has been saved.', array('%view' => $view4['label'])));
 
     // Check that the REST export path works.
     $this->drupalGet($view4['rest_export[path]']);
@@ -201,7 +203,7 @@ class BasicTest extends WizardTestBase {
 
     // Make sure the plugin types that should not have empty options don't have.
     // Test against all values is unit tested.
-    // @see \Drupal\views\Tests\Plugin\DisplayUnitTest
+    // @see \Drupal\views\Tests\Plugin\DisplayKernelTest
     $view = Views::getView($random_id);
     $displays = $view->storage->get('display');
 

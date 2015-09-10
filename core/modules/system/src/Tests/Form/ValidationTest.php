@@ -7,7 +7,6 @@
 
 namespace Drupal\system\Tests\Form;
 
-use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Url;
 use Drupal\simpletest\WebTestBase;
@@ -276,7 +275,7 @@ class ValidationTest extends WebTestBase {
    *   - key: The key used for the form element.
    */
   protected function assertErrorMessages($messages) {
-    $element = $this->xpath('//div[@class = "form-error-message"]/strong');
+    $element = $this->xpath('//div[@class = "form-item--error-message"]/strong');
     $this->assertIdentical(count($messages), count($element));
 
     $error_links = [];
@@ -292,11 +291,12 @@ class ValidationTest extends WebTestBase {
       // Gather the element for checking the jump link section.
       $error_links[] = \Drupal::l($message['title'], Url::fromRoute('<none>', [], ['fragment' => 'edit-' . str_replace('_', '-', $message['key']), 'external' => TRUE]));
     }
-    $top_message = \Drupal::translation()->formatPlural(count($error_links), '1 error has been found: !errors', '@count errors have been found: !errors', [
-      '!errors' => SafeMarkup::set(implode(', ', $error_links))
-    ]);
+    $top_message = \Drupal::translation()->formatPlural(count($error_links), '1 error has been found:', '@count errors have been found:');
     $this->assertRaw($top_message);
-    $this->assertNoText(t('An illegal choice has been detected. Please contact the site administrator.'));
+    foreach ($error_links as $error_link) {
+      $this->assertRaw($error_link);
+    }
+    $this->assertNoText('An illegal choice has been detected. Please contact the site administrator.');
   }
 
 }

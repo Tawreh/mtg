@@ -74,7 +74,7 @@ class SimpletestResultsForm extends FormBase {
     );
     $image_fail = array(
       '#theme' => 'image',
-      '#uri' => 'core/misc/icons/ea2800/error.svg',
+      '#uri' => 'core/misc/icons/e32700/error.svg',
       '#width' => 18,
       '#height' => 18,
       '#alt' => 'Fail',
@@ -313,7 +313,7 @@ class SimpletestResultsForm extends FormBase {
       $rows = array();
       foreach ($assertions as $assertion) {
         $row = array();
-        $row[] = SafeMarkup::checkAdminXss($assertion->message);
+        $row[] = ['data' => ['#markup' => $assertion->message]];
         $row[] = $assertion->message_group;
         $row[] = \Drupal::service('file_system')->basename(($assertion->file));
         $row[] = $assertion->line;

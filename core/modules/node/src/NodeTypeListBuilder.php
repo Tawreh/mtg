@@ -10,7 +10,6 @@ namespace Drupal\node;
 use Drupal\Core\Config\Entity\ConfigEntityListBuilder;
 use Drupal\Core\Url;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Component\Utility\Xss;
 
 /**
  * Defines a class to build a listing of node type entities.
@@ -36,10 +35,10 @@ class NodeTypeListBuilder extends ConfigEntityListBuilder {
    */
   public function buildRow(EntityInterface $entity) {
     $row['title'] = array(
-      'data' => $this->getLabel($entity),
+      'data' => $entity->label(),
       'class' => array('menu-label'),
     );
-    $row['description'] = Xss::filterAdmin($entity->getDescription());
+    $row['description']['data'] = ['#markup' => $entity->getDescription()];
     return $row + parent::buildRow($entity);
   }
 

@@ -181,7 +181,7 @@ class Page extends PathPluginBase {
     //   it should be dropped.
     if (is_array($render)) {
       $render += array(
-        '#title' => Xss::filterAdmin($this->view->getTitle()),
+        '#title' => ['#markup' => $this->view->getTitle(), '#allowed_tags' => Xss::getHtmlTagList()],
       );
     }
     return $render;

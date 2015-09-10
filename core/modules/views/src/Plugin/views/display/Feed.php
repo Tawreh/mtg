@@ -67,7 +67,7 @@ class Feed extends PathPluginBase implements ResponseDisplayPluginInterface {
     /** @var \Drupal\Core\Render\RendererInterface $renderer */
     $renderer = \Drupal::service('renderer');
 
-    $output = $renderer->renderRoot($build);
+    $output = (string) $renderer->renderRoot($build);
 
     if (empty($output)) {
       throw new NotFoundHttpException();
@@ -99,7 +99,7 @@ class Feed extends PathPluginBase implements ResponseDisplayPluginInterface {
     if (!empty($this->view->live_preview)) {
       $output = array(
         '#prefix' => '<pre>',
-        '#markup' => SafeMarkup::checkPlain(drupal_render_root($output)),
+        '#plain_text' => drupal_render_root($output),
         '#suffix' => '</pre>',
       );
     }

@@ -1,0 +1,21 @@
+uuid: cdb48142-8ed6-46a9-ad4f-79a9feb840c4
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_mana_cost
+    - node.type.card
+id: node.card.field_mana_cost
+field_name: field_mana_cost
+entity_type: node
+bundle: card
+label: 'Mana cost'
+description: ''
+required: false
+translatable: false
+default_value:
+  -
+    value: ''
+default_value_callback: ''
+settings: {  }
+field_type: string
