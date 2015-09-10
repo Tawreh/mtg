@@ -153,7 +153,7 @@ abstract class AbstractNormalizer extends SerializerAwareNormalizer implements N
      */
     public function setCamelizedAttributes(array $camelizedAttributes)
     {
-        trigger_error(sprintf('%s is deprecated since version 2.7 and will be removed in 3.0. Use Symfony\Component\Serializer\NameConverter\CamelCaseToSnakeCaseNameConverter instead.', __METHOD__), E_USER_DEPRECATED);
+        @trigger_error(sprintf('%s is deprecated since version 2.7 and will be removed in 3.0. Use Symfony\Component\Serializer\NameConverter\CamelCaseToSnakeCaseNameConverter instead.', __METHOD__), E_USER_DEPRECATED);
 
         if ($this->nameConverter && !$this->nameConverter instanceof CamelCaseToSnakeCaseNameConverter) {
             throw new LogicException(sprintf('%s cannot be called if a custom Name Converter is defined.', __METHOD__));
@@ -232,7 +232,7 @@ abstract class AbstractNormalizer extends SerializerAwareNormalizer implements N
      */
     protected function formatAttribute($attributeName)
     {
-        trigger_error(sprintf('%s is deprecated since version 2.7 and will be removed in 3.0. Use Symfony\Component\Serializer\NameConverter\CamelCaseToSnakeCaseNameConverter instead.', __METHOD__), E_USER_DEPRECATED);
+        @trigger_error(sprintf('%s is deprecated since version 2.7 and will be removed in 3.0. Use Symfony\Component\Serializer\NameConverter\CamelCaseToSnakeCaseNameConverter instead.', __METHOD__), E_USER_DEPRECATED);
 
         return $this->nameConverter ? $this->nameConverter->normalize($attributeName) : $attributeName;
     }
@@ -272,23 +272,11 @@ abstract class AbstractNormalizer extends SerializerAwareNormalizer implements N
      */
     protected function prepareForDenormalization($data)
     {
-        if (is_array($data) || is_object($data) && $data instanceof \ArrayAccess) {
-            $normalizedData = $data;
-        } elseif (is_object($data)) {
-            $normalizedData = array();
-
-            foreach ($data as $attribute => $value) {
-                $normalizedData[$attribute] = $value;
-            }
-        } else {
-            $normalizedData = array();
-        }
-
-        return $normalizedData;
+        return (array) $data;
     }
 
     /**
-     * Instantiates an object using contructor parameters when needed.
+     * Instantiates an object using constructor parameters when needed.
      *
      * This method also allows to denormalize data into an existing object if
      * it is present in the context with the object_to_populate key.
@@ -303,7 +291,7 @@ abstract class AbstractNormalizer extends SerializerAwareNormalizer implements N
      *
      * @throws RuntimeException
      */
-    protected function instantiateObject(array $data, $class, array &$context, \ReflectionClass $reflectionClass, $allowedAttributes)
+    protected function instantiateObject(array &$data, $class, array &$context, \ReflectionClass $reflectionClass, $allowedAttributes)
     {
         if (
             isset($context['object_to_populate']) &&

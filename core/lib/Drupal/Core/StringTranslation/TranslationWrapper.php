@@ -7,6 +7,8 @@
 
 namespace Drupal\Core\StringTranslation;
 
+use Drupal\Component\Utility\SafeStringInterface;
+
 /**
  * Provides a class to wrap a translatable string.
  *
@@ -16,7 +18,7 @@ namespace Drupal\Core\StringTranslation;
  *
  * @see \Drupal\Core\Annotation\Translation
  */
-class TranslationWrapper {
+class TranslationWrapper implements SafeStringInterface {
   use StringTranslationTrait;
 
   /**
@@ -83,6 +85,16 @@ class TranslationWrapper {
   }
 
   /**
+   * Gets all options from this translation wrapper.
+   *
+   * @return mixed[]
+   *   The array of options.
+   */
+  public function getOptions() {
+    return $this->options;
+  }
+
+  /**
    * Implements the magic __toString() method.
    */
   public function __toString() {
@@ -104,6 +116,16 @@ class TranslationWrapper {
    */
   public function __sleep() {
     return array('string', 'arguments', 'options');
+  }
+
+  /**
+   * Returns a representation of the object for use in JSON serialization.
+   *
+   * @return string
+   *   The safe string content.
+   */
+  public function jsonSerialize() {
+    return $this->__toString();
   }
 
 }

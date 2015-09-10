@@ -287,15 +287,21 @@ function simpletest_phpunit_run_command(array $unescaped_test_classnames, $phpun
  *   The command that can be run through exec().
  */
 function simpletest_phpunit_command() {
+  // Load the actual autoloader being used and determine its filename using
+  // reflection. We can determine the vendor directory based on that filename.
+  $autoloader = require \Drupal::root() . '/autoload.php';
+  $reflector = new ReflectionClass($autoloader);
+  $vendor_dir = dirname(dirname($reflector->getFileName()));
+
   // Don't use the committed version in composer's bin dir if running on
   // windows.
   if (substr(PHP_OS, 0, 3) == 'WIN') {
     $php_executable_finder = new PhpExecutableFinder();
     $php = $php_executable_finder->find();
-    $phpunit_bin = escapeshellarg($php) . " -f " . escapeshellarg(\Drupal::root() . "/core/vendor/phpunit/phpunit/composer/bin/phpunit") . " --";
+    $phpunit_bin = escapeshellarg($php) . ' -f ' . escapeshellarg($vendor_dir . '/phpunit/phpunit/composer/bin/phpunit') . ' --';
   }
   else {
-    $phpunit_bin = \Drupal::root() . "/core/vendor/bin/phpunit";
+    $phpunit_bin = $vendor_dir . '/phpunit/phpunit/phpunit';
   }
   return $phpunit_bin;
 }
@@ -487,41 +493,47 @@ function simpletest_classloader_register() {
 }
 
 /**
- * Generates test file.
+ * Generates a test file.
  *
  * @param string $filename
- *   The name of the file, including the path.
+ *   The name of the file, including the path. The suffix '.txt' is appended to
+ *   the supplied file name and the file is put into the public:// files
+ *   directory.
  * @param int $width
  *   The number of characters on one line.
  * @param int $lines
  *   The number of lines in the file.
  * @param string $type
- *   (optional) The type, for example: "text", "binary", or "binary-text".
+ *   (optional) The type, one of:
+ *   - text: The generated file contains random ASCII characters.
+ *   - binary: The generated file contains random characters whose codes are in
+ *     the range of 0 to 31.
+ *   - binary-text: The generated file contains random sequence of '0' and '1'
+ *     values.
  *
  * @return string
  *   The name of the file, including the path.
  */
 function simpletest_generate_file($filename, $width, $lines, $type = 'binary-text') {
-  $size = $width * $lines - $lines;
-
-  // Generate random text
   $text = '';
-  for ($i = 0; $i < $size; $i++) {
-    switch ($type) {
-      case 'text':
-        $text .= chr(rand(32, 126));
-        break;
-      case 'binary':
-        $text .= chr(rand(0, 31));
-        break;
-      case 'binary-text':
-      default:
-        $text .= rand(0, 1);
-        break;
+    for ($i = 0; $i < $lines; $i++) {
+      // Generate $width - 1 characters to leave space for the "\n" character.
+      for ($j = 0; $j < $width - 1; $j++) {
+        switch ($type) {
+          case 'text':
+            $text .= chr(rand(32, 126));
+            break;
+          case 'binary':
+            $text .= chr(rand(0, 31));
+            break;
+          case 'binary-text':
+          default:
+            $text .= rand(0, 1);
+            break;
+        }
+      }
+      $text .= "\n";
     }
-  }
-  // Add \n for symmetrical file.
-  $text = wordwrap($text, $width - 1, "\n", TRUE) . "\n";
 
   // Create filename.
   file_put_contents('public://' . $filename . '.txt', $text);

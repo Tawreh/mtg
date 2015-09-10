@@ -7,6 +7,7 @@
 
 namespace Drupal\comment\Tests;
 
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Session\UserSession;
 use Drupal\comment\CommentInterface;
 use Drupal\system\Tests\Entity\EntityUnitTestBase;
@@ -69,18 +70,17 @@ class CommentDefaultFormatterCacheTagsTest extends EntityUnitTestBase {
       ->getViewBuilder('entity_test')
       ->view($commented_entity);
     $renderer->renderRoot($build);
-    $expected_cache_tags = array(
+    $expected_cache_tags = [
       'entity_test_view',
       'entity_test:'  . $commented_entity->id(),
-      'comment_list',
       'config:core.entity_form_display.comment.comment.default',
       'config:field.field.comment.comment.comment_body',
       'config:field.field.entity_test.entity_test.comment',
       'config:field.storage.comment.comment_body',
       'config:user.settings',
-    );
+    ];
     sort($expected_cache_tags);
-    $this->assertEqual($build['#cache']['tags'], $expected_cache_tags, 'The test entity has the expected cache tags before it has comments.');
+    $this->assertEqual($build['#cache']['tags'], $expected_cache_tags);
 
     // Create a comment on that entity. Comment loading requires that the uid
     // also exists in the {users} table.
@@ -111,10 +111,9 @@ class CommentDefaultFormatterCacheTagsTest extends EntityUnitTestBase {
       ->getViewBuilder('entity_test')
       ->view($commented_entity);
     $renderer->renderRoot($build);
-    $expected_cache_tags = array(
+    $expected_cache_tags = [
       'entity_test_view',
       'entity_test:' . $commented_entity->id(),
-      'comment_list',
       'comment_view',
       'comment:' . $comment->id(),
       'config:filter.format.plain_text',
@@ -125,9 +124,9 @@ class CommentDefaultFormatterCacheTagsTest extends EntityUnitTestBase {
       'config:field.field.entity_test.entity_test.comment',
       'config:field.storage.comment.comment_body',
       'config:user.settings',
-    );
+    ];
     sort($expected_cache_tags);
-    $this->assertEqual($build['#cache']['tags'], $expected_cache_tags, 'The test entity has the expected cache tags when it has comments.');
+    $this->assertEqual($build['#cache']['tags'], $expected_cache_tags);
   }
 
 }

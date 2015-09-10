@@ -290,8 +290,8 @@ class ContentTranslationHandler implements ContentTranslationHandlerInterface, E
       $title = $this->entityFormTitle($entity);
       // When editing the original values display just the entity label.
       if ($form_langcode != $entity_langcode) {
-        $t_args = array('%language' => $languages[$form_langcode]->getName(), '%title' => $entity->label(), '!title' => $title);
-        $title = empty($source_langcode) ? t('!title [%language translation]', $t_args) : t('Create %language translation of %title', $t_args);
+        $t_args = array('%language' => $languages[$form_langcode]->getName(), '%title' => $entity->label(), '@title' => $title);
+        $title = empty($source_langcode) ? t('@title [%language translation]', $t_args) : t('Create %language translation of %title', $t_args);
       }
       $form['#title'] = $title;
     }
@@ -473,9 +473,7 @@ class ContentTranslationHandler implements ContentTranslationHandlerInterface, E
     $form['#entity_builders'][] = array($this, 'entityFormEntityBuild');
 
     // Handle entity validation.
-    if (isset($form['actions']['submit'])) {
-      $form['actions']['submit']['#validate'][] = array($this, 'entityFormValidate');
-    }
+    $form['#validate'][] = array($this, 'entityFormValidate');
 
     // Handle entity deletion.
     if (isset($form['actions']['delete'])) {
