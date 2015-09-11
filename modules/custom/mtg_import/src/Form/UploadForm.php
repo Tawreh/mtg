@@ -7,6 +7,8 @@
 
 namespace Drupal\mtg_import\Form;
 
+use Drupal\mtg_import;
+
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 
@@ -37,6 +39,12 @@ class UploadForm extends FormBase {
       '#required' => TRUE,
     ];
 
+    $form['mtg_import_overwrite_existing'] = [
+      '#title' => t('Overwrite existing cards?'),
+      '#type' => 'checkbox',
+      '#description' => t('If checked, any matching cards will be overwritten, rather than adding a new instance.'),
+    ];
+
     $form['submit'] = [
       '#type' => 'submit',
       '#value' => t('Submit'),
@@ -60,7 +68,9 @@ class UploadForm extends FormBase {
     $fid = $form_state->getValue('mtg_import_json_file');
     $fid = reset($fid);
 
-    if (mtg_import_receive_file($fid)) {
+    $overwrite = $form_state->getValue('mtg_import_overwrite_existing');
+
+    if (mtg_import_receive_file($fid, $overwrite)) {
       drupal_set_message(t('Successfully imported file.'));
     }
   }

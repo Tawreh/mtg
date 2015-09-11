@@ -6,3 +6,78 @@
  *
  * Includes helper functions and Drupal hooks.
  */
+
+use Drupal\file\Entity;
+
+/**
+ * Receive the JSON file ready to pass it to the importer.
+ *
+ * @param int $fid
+ *   The ID of the JSON file.
+ * @param bool $overwrite
+ *   Overwrite any existing cards. If false,
+ */
+function mtg_import_receive_file($fid, $overwrite = FALSE) {
+  if ($fid == 0) {
+    return FALSE;
+  }
+
+  $file = \Drupal\file\Entity\File::load($fid);
+
+  if (!$file) {
+    drupal_set_message('Unable to load file.');
+    return FALSE;
+  }
+
+  $uri = $file->uri->value;
+  $file_contents_raw = file_get_contents($uri);
+  $file_contents = json_decode($file_contents_raw);
+
+  // Each file should contain information about the block and the cards in it.
+  // Separate the cards, then parse each part separately.
+  if (isset($file_contents->cards)) {
+    $cards = $file_contents->cards;
+    unset($file_contents->cards);
+
+    $cards_processed = mtg_import_parse_cards($cards);
+  }
+
+  return TRUE;
+
+}
+
+/**
+ * Parse card data from a JSON file.
+ *
+ * @param array $cards
+ *   An array of card objects, that must include the following properties, which
+ *   will be mapped to the given fields in the 'Card' entity:
+ *    [name] => title
+ *    [colors] => field_colours
+ *    [type] => field_type
+ *    [types] => field_types
+ *    [subtypes] => field_subtypes
+ *    [cmc] => field_converted_mana
+ *    [rarity] => field_rarity
+ *    [power] => field_power
+ *    [toughness] => field_toughness
+ *    [manaCost] => field_mana_cost
+ *    [text] => field_text
+ *    [number] => field_number
+ *    [watermark] => field_affiliation
+ */
+function mtg_import_parse_cards(array $cards) {
+  if (empty($cards)) {
+    return;
+  }
+
+  dpm($cards);
+
+  foreach ($cards as $card_object) {
+    $card = entity_create('node', array(
+      'type' => 'card',
+      'title' => $card_object->name,
+    ));
+    $card->save();
+  }
+}
