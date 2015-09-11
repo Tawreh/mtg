@@ -6,9 +6,11 @@
  */
 
 namespace Drupal\mtg_import\Form;
+
+use Drupal\Core\Site\Settings;
+
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Component\Utility\UrlHelper;
 
 /**
  * Upload form.
@@ -27,10 +29,12 @@ class UploadForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $form['mtg_import_json_file'] = [
-      '#name' => t('Select file'),
-      '#type' => 'file',
-      '#size' => 22,
-      '#weight' => 0,
+      '#title' => t('Select file'),
+      '#type' => 'managed_file',
+      '#upload_location' => 'public://mtg_json_files',
+      '#upload_validators' => array(
+        'file_validate_extensions' => array('json')
+      ),
     ];
 
     $form['submit'] = [
