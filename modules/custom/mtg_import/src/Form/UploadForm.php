@@ -7,8 +7,6 @@
 
 namespace Drupal\mtg_import\Form;
 
-use Drupal\Core\Site\Settings;
-
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 
@@ -35,6 +33,8 @@ class UploadForm extends FormBase {
       '#upload_validators' => array(
         'file_validate_extensions' => array('json')
       ),
+      '#description' => t('File must be a <strong>json</strong> file.'),
+      '#required' => TRUE,
     ];
 
     $form['submit'] = [
@@ -56,7 +56,13 @@ class UploadForm extends FormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    drupal_set_message('You did it! You uploaded a file!');
+    // Pass the file to the parser.
+    $fid = $form_state->getValue('mtg_import_json_file');
+    $fid = reset($fid);
+
+    if (mtg_import_receive_file($fid)) {
+      drupal_set_message(t('Successfully imported file.'));
+    }
   }
 
 }
