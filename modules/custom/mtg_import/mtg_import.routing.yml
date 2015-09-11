@@ -1,7 +1,15 @@
-mtg_import_import:
-  path: 'mtg_import/upload'
+mtg_import.upload:
+  path: 'admin/content/mtg_import/upload'
   defaults:
     _form: '\Drupal\mtg_import\Form\UploadForm'
     _title: 'Upload JSON file'
+  requirements:
+    _permission: 'access content'
+
+mtg_import.parse:
+  path: 'admin/content/mtg_import/parse/{fid}'
+  defaults:
+    _controller: '\Drupal\mtg_import\Controller\MtgImportController::read_file'
+    _title: 'Parse JSON file'
   requirements:
     _permission: 'access content'

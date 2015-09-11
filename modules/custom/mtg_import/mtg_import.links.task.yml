@@ -1,0 +1,6 @@
+mtg_import.upload:
+  title: 'Import cards'
+  description: 'Upload a JSON file containing card data to be parsed and added to the site.'
+  base_route: system.admin_content
+  route_name: mtg_import.upload
+  weight: 100
