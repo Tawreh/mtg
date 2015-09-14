@@ -33,16 +33,10 @@ class UploadForm extends FormBase {
       '#type' => 'managed_file',
       '#upload_location' => 'public://mtg_json_files',
       '#upload_validators' => array(
-        'file_validate_extensions' => array('json')
+        'file_validate_extensions' => array('json'),
       ),
       '#description' => t('File must be a <strong>json</strong> file.'),
       '#required' => TRUE,
-    ];
-
-    $form['mtg_import_overwrite_existing'] = [
-      '#title' => t('Overwrite existing cards?'),
-      '#type' => 'checkbox',
-      '#description' => t('If checked, any matching cards will be overwritten, rather than adding a new instance.'),
     ];
 
     $form['submit'] = [
@@ -68,10 +62,8 @@ class UploadForm extends FormBase {
     $fid = $form_state->getValue('mtg_import_json_file');
     $fid = reset($fid);
 
-    $overwrite = $form_state->getValue('mtg_import_overwrite_existing');
-
-    if (mtg_import_receive_file($fid, $overwrite)) {
-      drupal_set_message(t('Successfully imported file.'));
+    if (mtg_import_receive_file($fid)) {
+      // drupal_set_message(t('Successfully imported file.'));
     }
   }
 
