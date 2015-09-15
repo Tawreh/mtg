@@ -73,6 +73,8 @@ function mtg_import_parse_cards(array $cards) {
     return;
   }
 
+  $success = $fail = 0;
+
   // Set up the various vocabularies for term referencing.
   $vocabularies = [
     'affiliation' => [],
@@ -81,7 +83,6 @@ function mtg_import_parse_cards(array $cards) {
     'rarity' => [],
     'set' => [],
     'subtypes' => [],
-    'tags' => [],
     'types' => [],
   ];
 
@@ -119,7 +120,7 @@ function mtg_import_parse_cards(array $cards) {
 
     // Colours. If empty, mark as colourless.
     $colours = [];
-    if (isset($card_object->colours)) {
+    if (isset($card_object->colors)) {
       foreach ($card_object->colors as $colour_name) {
         $colours[] = $vocabularies['colour'][$colour_name];
       }
@@ -200,22 +201,41 @@ function mtg_import_parse_cards(array $cards) {
     }
 
     // Create a new card.
-    $card = Node::create([
-      'type' => 'card',
-      'title' => $card_object->name,
-      'field_affiliation' => $affiliation,
-      'field_colours' => $colours,
-      'field_rarity' => $rarity,
-      'field_subtypes' => $subtypes,
-      'field_type' => $types,
-      // 'field_types' => $card_object->types,
-    ]);
-    $card->save();
+    try {
+      $card = Node::create([
+        'type' => 'card',
+        'title' => $card_object->name,
+        'uuid' => $card_object->multiverseid,
+        'field_card_id' => $card_object->multiverseid,
+        'field_number' => $card_object->number,
+        'field_affiliation' => $affiliation,
+        'field_colours' => $colours,
+        'field_rarity' => $rarity,
+        'field_type' => isset($card_object->type) ? $card_object->type : '',
+        'field_types' => $types,
+        'field_subtypes' => $subtypes,
+        'field_cmc' => isset($card_object->cmc) ? $card_object->cmc : NULL,
+        'field_power' => isset($card_object->power) ? $card_object->power : NULL,
+        'field_toughness' => isset($card_object->toughness) ? $card_object->toughness : NULL,
+        'field_mana_cost' => isset($card_object->manaCost) ? $card_object->manaCost : NULL,
+        'field_text' => isset($card_object->text) ? $card_object->text : '',
+        'field_flavour_text' => isset($card_object->flavor) ? $card_object->flavor : '',
+        'field_loyalty' => isset($card_object->loyalty) ? $card_object->loyalty : NULL,
+      ])->save();
+      $success++;
+    }
+    catch (Exception $e) {
+      $fail++;
+      \Drupal::logger('mtg_import')->error(t('Card ID @id failed to save: ' . $e->getMessage(), ['@id' => $card_object->multiverseid]));
+    }
   }
 
-  dpm($vocabularies);
-
-  drupal_set_message(t('Successfully imported @x cards.', array('@x' => count($cards))));
+  if ($success) {
+    drupal_set_message(t('Successfully imported @x cards.', ['@x' => $success]));
+  }
+  if ($fail) {
+    drupal_set_message(t('Failed to import @x cards. See the <a href="@error_log">error log</a> for details.', ['@x' => $fail, '@error_log' => '/admin/reports/dblog']), 'error');
+  }
 }
 
 /**
