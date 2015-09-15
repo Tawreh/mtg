@@ -5,11 +5,3 @@ mtg_import.upload:
     _title: 'Upload JSON file'
   requirements:
     _permission: 'access content'
-
-mtg_import.parse:
-  path: 'admin/content/mtg_import/parse/{fid}'
-  defaults:
-    _controller: '\Drupal\mtg_import\Controller\MtgImportController::read_file'
-    _title: 'Parse JSON file'
-  requirements:
-    _permission: 'access content'
