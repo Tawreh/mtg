@@ -19,7 +19,7 @@ use Drupal\taxonomy\TermStorage;
  * @param int $fid
  *   The ID of the JSON file.
  */
-function mtg_import_receive_file($fid) {
+function mtg_import_receive_file($fid, &$context) {
   if ($fid == 0) {
     return FALSE;
   }
@@ -28,6 +28,7 @@ function mtg_import_receive_file($fid) {
 
   if (!$file) {
     drupal_set_message('Unable to load file.');
+    \Drupal::logger('mtg_import')->error(t('Unable to load the file.'));
     return FALSE;
   }
 
@@ -35,17 +36,88 @@ function mtg_import_receive_file($fid) {
   $file_contents_raw = file_get_contents($uri);
   $file_contents = json_decode($file_contents_raw);
 
-  // Each file should contain information about the block and the cards in it.
-  // Separate the cards, then parse each part separately.
-  if (isset($file_contents->cards)) {
-    $cards = $file_contents->cards;
-    unset($file_contents->cards);
+  $context['results']['raw_data'] = $file_contents;
+  $context['message'] = t('Successfully retrieved file contents.');
+  $context['finished'] = 1;
+}
 
-    $cards_processed = mtg_import_parse_cards($cards);
+/**
+ * Parse set data from a JSON file.
+ */
+function mtg_import_parse_set_data(&$context) {
+  $error = FALSE;
+  $message = '';
+
+  if (isset($context['results']['raw_data'])) {
+    $json_data = $context['results']['raw_data'];
+
+    if (isset($json_data->block)) {
+      $block_data = [];
+      // Create block data, if it doesn't already exist.
+      $vocab_values = _mtg_import_retrieve_vocabulary_tree('mtg_block');
+
+      foreach ($vocab_values as $term_data) {
+        $block_data[$term_data->name] = $term_data->tid;
+      }
+
+      if (array_key_exists($json_data->block, $block_data)) {
+        $card_block = $block_data[$json_data->block];
+      }
+      else {
+        // Create new bock term.
+        $card_block = _mtg_import_create_term($json_data->block, 'mtg_block');
+      }
+
+      // Store the block so it can be added to cards.
+      $context['results']['block'] = $card_block;
+    }
+
+    // Each import must have a set code.
+    if (isset($json_data->code) && isset($json_data->name)) {
+      $set_data = [];
+      // Create set data, if it doesn't already exist.
+      $vocab_values = _mtg_import_retrieve_vocabulary_tree('mtg_set');
+
+      foreach ($vocab_values as $term_data) {
+        $set_data[$term_data->name] = $term_data->tid;
+      }
+
+      if (array_key_exists($json_data->name, $set_data)) {
+        $card_set = $set_data[$json_data->name];
+      }
+      else {
+        // Create new set term.
+        $extra_fields = [];
+        $extra_fields['field_set_code'] = $json_data->code;
+
+        // If there's a block for this set, add it as a term reference.
+        if (isset($context['results']['block'])) {
+          $extra_fields['field_block'] = $context['results']['block'];
+        }
+
+        $card_set = _mtg_import_create_term($json_data->name, 'mtg_set', $extra_fields);
+      }
+
+      // Store the set so it can be added to cards.
+      $context['results']['set'] = $card_set;
+    }
+    else {
+      $error = TRUE;
+      $message = t('Unable to continue processing as there is no set information.');
+    }
+  }
+  else {
+    $error = TRUE;
+    $message = t('You didn\'t put any data in the file, dummy.');
   }
 
-  return TRUE;
+  if ($error) {
+    $context['message'] = $message;
+    $context['results']['error_message'] = $message;
+    throw new Exception($message);
+  }
 
+  $context['finished'] = 1;
 }
 
 /**
@@ -68,8 +140,16 @@ function mtg_import_receive_file($fid) {
  *    [number] => field_number
  *    [watermark] => field_affiliation
  */
-function mtg_import_parse_cards(array $cards) {
-  if (empty($cards)) {
+function mtg_import_parse_card_data(&$context) {
+  $card_chunks = array_chunk($context['results']['json_data']->cards, 20);
+
+  if (!isset($context['sandbox']['progress'])) {
+    $context['sandbox']['progress'] = 0;
+    $context['sandbox']['current_chunk'] = 0;
+    $context['sandbox']['max_chunks'] = count($card_chunks);
+  }
+
+  if (empty($card_chunks)) {
     return;
   }
 
@@ -94,139 +174,140 @@ function mtg_import_parse_cards(array $cards) {
     }
   }
 
-  foreach ($cards as $card_object) {
-    // Affiliation.
-    if (isset($card_object->watermark)) {
-      if (array_key_exists($card_object->watermark, $vocabularies['affiliation'])) {
-        $affiliation = $vocabularies['affiliation'][$card_object->watermark];
-      }
-      else {
-        // Create new affiliation term.
-        $new_affiliation = Term::create([
-          'name' => $card_object->watermark,
-          'vid' => 'mtg_affiliation',
-        ]);
-        $new_affiliation->save();
-
-        $affiliation = $new_affiliation->id();
-
-        // Also add it to the vocabularies array.
-        $vocabularies['affiliation'][$card_object->watermark] = $new_affiliation->id();
-      }
-    }
-    else {
-      $affiliation = NULL;
-    }
-
-    // Colours. If empty, mark as colourless.
-    $colours = [];
-    if (isset($card_object->colors)) {
-      foreach ($card_object->colors as $colour_name) {
-        $colours[] = $vocabularies['colour'][$colour_name];
-      }
-    }
-
-    if (empty($colours)) {
-      $colours[] = $vocabularies['colour']['Colourless'];
-    }
-
-    // Rarity.
-    if (isset($card_object->rarity)) {
-      if (array_key_exists($card_object->rarity, $vocabularies['rarity'])) {
-        $rarity = $vocabularies['rarity'][$card_object->rarity];
-      }
-      else {
-        // Create new rarity term.
-        $new_rarity = Term::create([
-          'name' => $card_object->rarity,
-          'vid' => 'mtg_rarity',
-        ]);
-        $new_rarity->save();
-
-        $rarity = $new_rarity->id();
-
-        // Also add it to the vocabularies array.
-        $vocabularies['rarity'][$card_object->rarity] = $new_rarity->id();
-      }
-    }
-    else {
-      $rarity = NULL;
-    }
-
-    // Subtypes.
-    $subtypes = array();
-    if (isset($card_object->subtypes)) {
-      foreach ($card_object->subtypes as $subtype) {
-        if (array_key_exists($subtype, $vocabularies['subtypes'])) {
-          $subtypes[] = $vocabularies['subtypes'][$subtype];
+  foreach ($card_chunks as $chunk => $cards) {
+    foreach ($cards as $card_object) {
+      // Affiliation.
+      if (isset($card_object->watermark)) {
+        if (array_key_exists($card_object->watermark, $vocabularies['affiliation'])) {
+          $affiliation = $vocabularies['affiliation'][$card_object->watermark];
         }
         else {
-          // Create new subtypes term.
-          $new_subtype = Term::create([
-            'name' => $subtype,
-            'vid' => 'mtg_subtypes',
+          // Create new affiliation term.
+          $new_affiliation = Term::create([
+            'name' => $card_object->watermark,
+            'vid' => 'mtg_affiliation',
           ]);
-          $new_subtype->save();
+          $new_affiliation->save();
 
-          $subtypes[] = $new_subtype->id();
+          $affiliation = $new_affiliation->id();
 
           // Also add it to the vocabularies array.
-          $vocabularies['subtypes'][$subtype] = $new_subtype->id();
+          $vocabularies['affiliation'][$card_object->watermark] = $new_affiliation->id();
         }
       }
-    }
+      else {
+        $affiliation = NULL;
+      }
 
-    // Types.
-    $types = array();
-    if (isset($card_object->types)) {
-      foreach ($card_object->types as $type) {
-        if (array_key_exists($type, $vocabularies['types'])) {
-          $types[] = $vocabularies['types'][$type];
+      // Colours. If empty, mark as colourless.
+      $colours = [];
+      if (isset($card_object->colors)) {
+        foreach ($card_object->colors as $colour_name) {
+          $colours[] = $vocabularies['colour'][$colour_name];
+        }
+      }
+
+      if (empty($colours)) {
+        $colours[] = $vocabularies['colour']['Colourless'];
+      }
+
+      // Rarity.
+      if (isset($card_object->rarity)) {
+        if (array_key_exists($card_object->rarity, $vocabularies['rarity'])) {
+          $rarity = $vocabularies['rarity'][$card_object->rarity];
         }
         else {
-          // Create new types term.
-          $new_type = Term::create([
-            'name' => $type,
-            'vid' => 'mtg_types',
+          // Create new rarity term.
+          $new_rarity = Term::create([
+            'name' => $card_object->rarity,
+            'vid' => 'mtg_rarity',
           ]);
-          $new_type->save();
+          $new_rarity->save();
 
-          // dpm($new_type);
-          $types[] = $new_type->id();
+          $rarity = $new_rarity->id();
 
           // Also add it to the vocabularies array.
-          $vocabularies['types'][$type] = $new_type->id();
+          $vocabularies['rarity'][$card_object->rarity] = $new_rarity->id();
         }
       }
-    }
+      else {
+        $rarity = NULL;
+      }
 
-    // Create a new card.
-    try {
-      $card = Node::create([
-        'type' => 'card',
-        'title' => $card_object->name,
-        'uuid' => $card_object->multiverseid,
-        'field_card_id' => $card_object->multiverseid,
-        'field_number' => $card_object->number,
-        'field_affiliation' => $affiliation,
-        'field_colours' => $colours,
-        'field_rarity' => $rarity,
-        'field_type' => isset($card_object->type) ? $card_object->type : '',
-        'field_types' => $types,
-        'field_subtypes' => $subtypes,
-        'field_cmc' => isset($card_object->cmc) ? $card_object->cmc : NULL,
-        'field_power' => isset($card_object->power) ? $card_object->power : NULL,
-        'field_toughness' => isset($card_object->toughness) ? $card_object->toughness : NULL,
-        'field_mana_cost' => isset($card_object->manaCost) ? $card_object->manaCost : NULL,
-        'field_text' => isset($card_object->text) ? $card_object->text : '',
-        'field_flavour_text' => isset($card_object->flavor) ? $card_object->flavor : '',
-        'field_loyalty' => isset($card_object->loyalty) ? $card_object->loyalty : NULL,
-      ])->save();
-      $success++;
-    }
-    catch (Exception $e) {
-      $fail++;
-      \Drupal::logger('mtg_import')->error(t('Card ID @id failed to save: ' . $e->getMessage(), ['@id' => $card_object->multiverseid]));
+      // Subtypes.
+      $subtypes = array();
+      if (isset($card_object->subtypes)) {
+        foreach ($card_object->subtypes as $subtype) {
+          if (array_key_exists($subtype, $vocabularies['subtypes'])) {
+            $subtypes[] = $vocabularies['subtypes'][$subtype];
+          }
+          else {
+            // Create new subtypes term.
+            $new_subtype = Term::create([
+              'name' => $subtype,
+              'vid' => 'mtg_subtypes',
+            ]);
+            $new_subtype->save();
+
+            $subtypes[] = $new_subtype->id();
+
+            // Also add it to the vocabularies array.
+            $vocabularies['subtypes'][$subtype] = $new_subtype->id();
+          }
+        }
+      }
+
+      // Types.
+      $types = array();
+      if (isset($card_object->types)) {
+        foreach ($card_object->types as $type) {
+          if (array_key_exists($type, $vocabularies['types'])) {
+            $types[] = $vocabularies['types'][$type];
+          }
+          else {
+            // Create new types term.
+            $new_type = Term::create([
+              'name' => $type,
+              'vid' => 'mtg_types',
+            ]);
+            $new_type->save();
+
+            $types[] = $new_type->id();
+
+            // Also add it to the vocabularies array.
+            $vocabularies['types'][$type] = $new_type->id();
+          }
+        }
+      }
+
+      // Create a new card.
+      try {
+        $card = Node::create([
+          'type' => 'card',
+          'title' => $card_object->name,
+          'uuid' => $card_object->multiverseid,
+          'field_card_id' => $card_object->multiverseid,
+          'field_number' => $card_object->number,
+          'field_affiliation' => $affiliation,
+          'field_colours' => $colours,
+          'field_rarity' => $rarity,
+          'field_type' => isset($card_object->type) ? $card_object->type : '',
+          'field_types' => $types,
+          'field_subtypes' => $subtypes,
+          'field_cmc' => isset($card_object->cmc) ? $card_object->cmc : NULL,
+          'field_power' => isset($card_object->power) ? $card_object->power : NULL,
+          'field_toughness' => isset($card_object->toughness) ? $card_object->toughness : NULL,
+          'field_mana_cost' => isset($card_object->manaCost) ? $card_object->manaCost : NULL,
+          'field_text' => isset($card_object->text) ? $card_object->text : '',
+          'field_flavour_text' => isset($card_object->flavor) ? $card_object->flavor : '',
+          'field_loyalty' => isset($card_object->loyalty) ? $card_object->loyalty : NULL,
+        ])->save();
+        $success++;
+      }
+      catch (Exception $e) {
+        $fail++;
+        \Drupal::logger('mtg_import')->error(t('Card ID @id failed to save: ' . $e->getMessage(), ['@id' => $card_object->multiverseid]));
+      }
     }
   }
 
@@ -235,6 +316,32 @@ function mtg_import_parse_cards(array $cards) {
   }
   if ($fail) {
     drupal_set_message(t('Failed to import @x cards. See the <a href="@error_log">error log</a> for details.', ['@x' => $fail, '@error_log' => '/admin/reports/dblog']), 'error');
+  }
+
+  $context['finished'] = 1;
+}
+
+/**
+ * Finished batch.
+ */
+function mtg_import_completed($success, $results, $operations) {
+  dpm($results);
+  if ($success) {
+    $message = \Drupal::translation()->formatPlural(count($results), 'One card successfully imported.', '@count cards successfully imported.');
+    drupal_set_message($message);
+  }
+  else {
+    // An error occurred.
+    // $operations contains the operations that remained unprocessed.
+    if (isset($results['error_message'])) {
+      $message = $results['error_message'];
+    }
+    else {
+      $error_operation = reset($operations);
+      $message = t('An error occurred while processing %error_operation.', array('%error_operation' => $error_operation[0]));
+    }
+
+    drupal_set_message($message, 'error');
   }
 }
 
@@ -249,4 +356,39 @@ function mtg_import_parse_cards(array $cards) {
  */
 function _mtg_import_retrieve_vocabulary_tree($vocabulary) {
   return \Drupal::entityManager()->getStorage('taxonomy_term')->loadTree($vocabulary);
+}
+
+/**
+ * Create a new taxonomy term. Return the ID of the new term.
+ *
+ * @param string $term
+ *   Taxonomy term name.
+ * @param string $vocabulary
+ *   Vocabulary ID.
+ * @param array $fields
+ *   Optional extra fields, keyed by field_name => value.
+ *
+ * @return int
+ *   The ID of the new term.
+ */
+function _mtg_import_create_term($term, $vocabulary, $fields = []) {
+  $new_term = Term::create([
+    'name' => $term,
+    'vid' => $vocabulary,
+  ]);
+
+  if (!empty($fields)) {
+    foreach ($fields as $field_name => $field_value) {
+      $new_term->$field_name = $field_value;
+    }
+  }
+
+  try {
+    $new_term->save();
+  }
+  catch (Exception $e) {
+    \Drupal::logger('mtg_import')->error(t('Failed to create a new term, @term, in @vocabulary. This was the error: ' . $e->getMessage(), ['@term' => $term, '@vocabulary' => $vocabulary]));
+  }
+
+  return $new_term->id();
 }

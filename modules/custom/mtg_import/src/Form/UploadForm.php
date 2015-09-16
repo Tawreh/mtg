@@ -62,9 +62,17 @@ class UploadForm extends FormBase {
     $fid = $form_state->getValue('mtg_import_json_file');
     $fid = reset($fid);
 
-    if (mtg_import_receive_file($fid)) {
-      // drupal_set_message(t('Successfully imported file.'));
-    }
+    $batch = [
+      'title' => t('Importing'),
+      'operations' => [
+        ['mtg_import_receive_file', [$fid]],
+        ['mtg_import_parse_set_data', []],
+        // ['mtg_import_parse_card_data', []],
+      ],
+      'finished' => 'mtg_import_completed',
+    ];
+
+    batch_set($batch);
   }
 
 }
