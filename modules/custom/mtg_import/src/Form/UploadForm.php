@@ -9,6 +9,7 @@ namespace Drupal\mtg_import\Form;
 
 use Drupal\mtg_import;
 
+use Drupal\file\Entity\File;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 
@@ -62,17 +63,44 @@ class UploadForm extends FormBase {
     $fid = $form_state->getValue('mtg_import_json_file');
     $fid = reset($fid);
 
-    $batch = [
-      'title' => t('Importing'),
-      'operations' => [
-        ['mtg_import_receive_file', [$fid]],
-        ['mtg_import_parse_set_data', []],
-        // ['mtg_import_parse_card_data', []],
-      ],
-      'finished' => 'mtg_import_completed',
-    ];
+    if ($fid == 0) {
+      return FALSE;
+    }
 
-    batch_set($batch);
+    $file = File::load($fid);
+
+    if (!$file) {
+      drupal_set_message('Unable to load file.');
+      \Drupal::logger('mtg_import')->error(t('Unable to load the file.'));
+      return FALSE;
+    }
+
+    $uri = $file->uri->value;
+    $file_contents_raw = file_get_contents($uri);
+    $file_contents = json_decode($file_contents_raw);
+
+    if (isset($file_contents->cards) && !empty($file_contents->cards)) {
+      $operations = [
+        ['mtg_import_parse_set_data', [$file_contents]],
+      ];
+
+      $chunks = array_chunk($file_contents->cards, 20);
+      foreach ($chunks as $chunk) {
+        $operations[] = ['mtg_import_parse_card_data', [$chunk]];
+      }
+
+      $batch = [
+        'title' => t('Importing'),
+        'operations' => $operations,
+        'finished' => 'mtg_import_completed',
+        'progress_message' => t('Completed part @current of @total.'),
+      ];
+
+      batch_set($batch);
+    }
+    else {
+      drupal_set_message(t('There are no cards in the file, so no import will take place.'), 'warning');
+    }
   }
 
 }
