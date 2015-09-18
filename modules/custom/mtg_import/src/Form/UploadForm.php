@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\mtg_import\Plugin\Form\UploadForm.
+ * Contains \Drupal\mtg_import\Form\UploadForm.
  */
 
-namespace Drupal\mtg_import\Plugin\Form;
+namespace Drupal\mtg_import\Form;
 
 use Drupal\mtg_import;
 

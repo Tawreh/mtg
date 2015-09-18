@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\mtg_import\Plugin\Action\AddInstance.php.
+ * Contains \Drupal\mtg_import\Action\AddInstance.php.
  */
 
-namespace Drupal\mtg_import\Plugin\Action;
+namespace Drupal\mtg_import\Action;
 
 use Drupal\Core\Action\ActionBase;
 use Drupal\Core\Access\AccessResult;
