@@ -1,0 +1,6 @@
+id: mtg_import_add_instance_action
+label: 'Add card instance(s)'
+status: true
+langcode: en
+type: node
+plugin: mtg_import_add_instance_action
